@@ -45,35 +45,47 @@ class PlayTools {
         return playCoverPath
     }
 
+    /// Copies the PlayTools framework bundled inside PlayCover.app into
+    /// `~/Library/Frameworks`. Games load that system path at runtime, so inject
+    /// alone is not enough — this must run whenever PlayTools is (re)installed.
     static func installOnSystem() {
-        Task(priority: .background) {
+        Task(priority: .utility) {
             do {
-                Log.shared.log("Installing PlayTools")
-
-                // Check if Frameworks folder exists, if not, create it
-                if !FileManager.default.fileExists(atPath: frameworksURL.path) {
-                    try FileManager.default.createDirectory(
-                        atPath: frameworksURL.path,
-                        withIntermediateDirectories: true,
-                        attributes: [:])
-                }
-
-                // Check if a version of PlayTools is already installed, if so remove it
-                FileManager.default.delete(at: URL(fileURLWithPath: playToolsFramework.path))
-
-                // Install version of PlayTools bundled with PlayCover
-                Log.shared.log("Copying PlayTools to Frameworks")
-                if FileManager.default.fileExists(atPath: playToolsFramework.path) {
-                    try FileManager.default.removeItem(at: playToolsFramework)
-                }
-                try FileManager.default.copyItem(at: bundledPlayToolsFramework, to: playToolsFramework)
+                try installOnSystemSync()
             } catch {
                 Log.shared.error(error)
             }
         }
     }
 
+    @discardableResult
+    static func installOnSystemSync() throws -> URL {
+        Log.shared.log("Installing PlayTools to \(playToolsFramework.path)")
+
+        if !FileManager.default.fileExists(atPath: frameworksURL.path) {
+            try FileManager.default.createDirectory(
+                atPath: frameworksURL.path,
+                withIntermediateDirectories: true,
+                attributes: [:])
+        }
+
+        if !FileManager.default.fileExists(atPath: bundledPlayToolsFramework.path) {
+            throw PlayCoverError.appCorrupted
+        }
+
+        if FileManager.default.fileExists(atPath: playToolsFramework.path) {
+            try FileManager.default.removeItem(at: playToolsFramework)
+        }
+        try FileManager.default.copyItem(at: bundledPlayToolsFramework, to: playToolsFramework)
+        Log.shared.log("PlayTools installed to \(playToolsFramework.path)")
+        return playToolsFramework
+    }
+
     static func installInIPA(_ exec: URL) async throws {
+        // Always refresh ~/Library/Frameworks from this PlayCover build first.
+        // Inject only adds a load command; the dylib the game runs is the system copy.
+        try installOnSystemSync()
+
         var binary = try Data(contentsOf: exec)
         try Macho.stripBinary(&binary)
 

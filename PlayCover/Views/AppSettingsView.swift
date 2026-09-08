@@ -197,7 +197,7 @@ struct GraphicsView: View {
     @AppStorage("settings.settings.disableTimeout") private var disableTimeout = false
     @AppStorage("settings.toggle.hideTitleBar") private var hideTitleBar = false
     @AppStorage("settings.toggle.floatingWindow") private var floatingWindow = false
-    @AppStorage("settings.settings.displayRotation") private var displayRotation = 0
+    @AppStorage("settings.settings.displayRotation") private var displayRotation = -1
     static var number: NumberFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .none
@@ -384,6 +384,7 @@ struct GraphicsView: View {
                         Text("settings.settings.displayRotation")
                         Spacer()
                         Picker("", selection: $settings.settings.displayRotation) {
+                            Text("settings.settings.displayRotation.automatic").tag(-1)
                             Text("settings.settings.displayRotation.default").tag(0)
                             Text("settings.settings.displayRotation.portrait").tag(1)
                             Text("settings.settings.displayRotation.landscapeRight").tag(2)
@@ -392,6 +393,10 @@ struct GraphicsView: View {
                         }
                         .frame(alignment: .leading)
                     }
+                    Spacer()
+                    Toggle("settings.toggle.followInGameOrientation",
+                           isOn: $settings.settings.followInGameOrientation)
+                        .help("settings.toggle.followInGameOrientation.help")
                     Spacer()
                     Toggle("settings.toggle.disableDisplaySleep", isOn: $settings.settings.disableTimeout)
                         .help("settings.toggle.disableDisplaySleep.help")

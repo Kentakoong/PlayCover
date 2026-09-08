@@ -187,11 +187,14 @@
 "settings.picker.windowFixMethod.1" = "Alternate";
 "settings.toggle.disableDisplaySleep" = "Disable display sleep";
 "settings.settings.displayRotation" = "Device Orientation";
+"settings.settings.displayRotation.automatic" = "Automatic";
 "settings.settings.displayRotation.default" = "Default";
 "settings.settings.displayRotation.portrait" = "Portrait";
 "settings.settings.displayRotation.landscapeRight" = "Landscape Right";
 "settings.settings.displayRotation.portraitUpsideDown" = "Portrait Upside Down";
 "settings.settings.displayRotation.flipFix" = "Flip Fix";
+"settings.toggle.followInGameOrientation" = "Follow in-game orientation";
+"settings.toggle.followInGameOrientation.help" = "When you rotate via Device Orientation or ⌘⇧1–4, also resize the Mac window (Stage Manager-like). Does not auto-detect Mac Catalyst scene orientation (that forces landscape). For portrait games, use App Default + Fix window display issues, then rotate to Portrait.";
 "settings.toggle.disableDisplaySleep.help" = "Prevent display from turning off while this app is running";
 "settings.toggle.hideTitleBar" = "Hide titlebar";
 "settings.toggle.floatingWindow" = "Floating window";
@@ -344,4 +347,3 @@
 "alert.start.anyway" = "Start Anyway";
 "alert.version.title" = "New Version Available";
 "alert.version.text" = "A new version for %@ is available. Do you want to download it?";
-

@@ -14,7 +14,8 @@ struct AppSettingsData: Codable {
     var sensitivity: Float = 50
 
     var disableTimeout = false
-    var displayRotation = 0
+    var displayRotation = -1
+    var followInGameOrientation = false
     var iosDeviceModel = "iPad13,8"
     var windowWidth = 1920
     var windowHeight = 1080
@@ -24,7 +25,7 @@ struct AppSettingsData: Codable {
     var notch: Bool = NSScreen.hasNotch()
     var bypass = false
     var discordActivity = DiscordActivity()
-    var version = "3.0.0"
+    var version = "3.1.0"
     var playChain = true
     var playChainDebugging = false
     var inverseScreenValues = false
@@ -62,7 +63,8 @@ struct AppSettingsData: Codable {
         keymapping = try container.decodeIfPresent(Bool.self, forKey: .keymapping) ?? true
         sensitivity = try container.decodeIfPresent(Float.self, forKey: .sensitivity) ?? 50
         disableTimeout = try container.decodeIfPresent(Bool.self, forKey: .disableTimeout) ?? false
-        displayRotation = try container.decodeIfPresent(Int.self, forKey: .displayRotation) ?? 0
+        displayRotation = try container.decodeIfPresent(Int.self, forKey: .displayRotation) ?? -1
+        followInGameOrientation = try container.decodeIfPresent(Bool.self, forKey: .followInGameOrientation) ?? false
         iosDeviceModel = try container.decodeIfPresent(String.self, forKey: .iosDeviceModel) ?? "iPad13,8"
         windowWidth = try container.decodeIfPresent(Int.self, forKey: .windowWidth) ?? 1920
         windowHeight = try container.decodeIfPresent(Int.self, forKey: .windowHeight) ?? 1080
@@ -135,6 +137,12 @@ class AppSettings {
         if !decode() {
             preserveUnreadableSettingsIfPresent()
             encode()
+        }
+
+        if settings.version.compare("3.1.0", options: .numeric) == .orderedAscending {
+            if settings.displayRotation == 0 { settings.displayRotation = -1 }
+            settings.playChain = true
+            settings.version = "3.1.0"
         }
 
         if settings.bundleIdentifier != info.bundleIdentifier {
