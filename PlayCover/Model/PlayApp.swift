@@ -88,7 +88,7 @@ class PlayApp: BaseApp {
             }
 
             // Wait for keychain unlock to finish before continuing
-            await unlockKeyCover()
+            try await unlockKeyCover()
 
             // Apps load PlayTools from ~/Library/Frameworks at process start.
             // Refresh it synchronously here so a game cannot race the background
@@ -229,13 +229,13 @@ extension PlayApp {
 
 // MARK: - KeyCover
 extension PlayApp {
-    func unlockKeyCover() async {
+    func unlockKeyCover() async throws {
         if KeyCover.shared.isKeyCoverEnabled() {
             let keychain = KeyCover.shared.listKeychains()
                 .first(where: { $0.appBundleID == self.info.bundleIdentifier })
 
             if let keychain = keychain, keychain.chainEncryptionStatus {
-                try? await KeyCover.shared.unlockChain(keychain)
+                try await KeyCover.shared.unlockChain(keychain)
 
                 if KeyCover.shared.keyCoverPlainTextKey == nil {
                     // Pop an alert telling the user that keychain was not unlocked
@@ -267,7 +267,11 @@ extension PlayApp {
                 .first(where: { $0.appBundleID == self.info.bundleIdentifier })
 
             if let keychain = keychain, !keychain.chainEncryptionStatus {
-                try? KeyCover.shared.lockChain(keychain)
+                do {
+                    try KeyCover.shared.lockChain(keychain)
+                } catch {
+                    Log.shared.error(error)
+                }
             }
         }
     }

@@ -130,18 +130,25 @@ struct KeyCoverKey {
 
     func encryptKeyDB() throws {
         if let plainTextKey = KeyCover.shared.keyCoverPlainTextKey {
-            // encrypt the db file
+            let temporaryURL = encryptedKeyDB.deletingLastPathComponent()
+                .appendingPathComponent(".\(UUID().uuidString).keyCover")
+            defer { try? FileManager.default.removeItem(at: temporaryURL) }
+
             let task = Process()
-            task.launchPath = "/usr/bin/openssl"
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/openssl")
             task.currentDirectoryPath = KeyCover.playChainPath.path
             task.arguments = ["enc", "-aes-256-cbc", "-A",
                                 "-in", decryptedKeyDB.path,
-                                "-out", encryptedKeyDB.path,
+                                "-out", temporaryURL.path,
                                 "-k", plainTextKey]
-            task.launch()
+            try task.run()
             task.waitUntilExit()
+            guard task.terminationStatus == 0,
+                  (try temporaryURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else {
+                throw CocoaError(.fileWriteUnknown)
+            }
 
-            // delete the key dbs
+            try replaceItem(at: encryptedKeyDB, with: temporaryURL)
             try deleteKeyDB()
 
             Task { @MainActor in
@@ -152,15 +159,22 @@ struct KeyCoverKey {
 
     func decryptKeyDB() throws {
         if let plainTextKey = KeyCover.shared.keyCoverPlainTextKey {
-            // decrypt the zip file
+            let temporaryURL = decryptedKeyDB.deletingLastPathComponent()
+                .appendingPathComponent(".\(UUID().uuidString).db")
+            defer { try? FileManager.default.removeItem(at: temporaryURL) }
+
             let task = Process()
-            task.launchPath = "/usr/bin/openssl"
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/openssl")
             task.arguments = ["enc", "-aes-256-cbc", "-A", "-d", "-in", encryptedKeyDB.path, "-out",
-                              decryptedKeyDB.path,
+                              temporaryURL.path,
                               "-k", plainTextKey]
-            task.launch()
+            try task.run()
             task.waitUntilExit()
-            // delete the encrypted key file
+            guard task.terminationStatus == 0, try isSQLiteDatabase(temporaryURL) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+
+            try replaceItem(at: decryptedKeyDB, with: temporaryURL)
             try FileManager.default.removeItem(at: encryptedKeyDB)
 
             Task { @MainActor in
@@ -175,6 +189,19 @@ struct KeyCoverKey {
 
     func deleteEncryptedKeyDB() throws {
         try FileManager.default.removeItem(at: encryptedKeyDB)
+    }
+
+    private func replaceItem(at destination: URL, with source: URL) throws {
+        if FileManager.default.fileExists(atPath: destination.path) {
+            _ = try FileManager.default.replaceItemAt(destination, withItemAt: source)
+        } else {
+            try FileManager.default.moveItem(at: source, to: destination)
+        }
+    }
+
+    private func isSQLiteDatabase(_ url: URL) throws -> Bool {
+        let header = try Data(contentsOf: url, options: .mappedIfSafe).prefix(16)
+        return header == Data("SQLite format 3\0".utf8)
     }
 }
 
