@@ -62,17 +62,11 @@ class PlayApp: BaseApp {
 
     // MARK: - Launch
     func launch() async {
-        do {
-            isStarting = true
+        isStarting = true
+        defer { isStarting = false }
 
-            if prohibitedToPlay {
-                await clearAllCache()
-                throw PlayCoverError.appProhibited
-            } else if maliciousProhibited {
-                await clearAllCache()
-                deleteApp()
-                throw PlayCoverError.appMaliciousProhibited
-            }
+        do {
+            try await validateLaunchEligibility()
 
             if await VersionCheck.shared.checkNewVersion(myApp: self) { return }
 
@@ -117,9 +111,20 @@ class PlayApp: BaseApp {
                     runAppExec() // Splitting to reduce complexity
                 }
             }
-            isStarting = false
         } catch {
             Log.shared.error(error)
+        }
+    }
+
+    private func validateLaunchEligibility() async throws {
+        if prohibitedToPlay {
+            await clearAllCache()
+            throw PlayCoverError.appProhibited
+        }
+        if maliciousProhibited {
+            await clearAllCache()
+            deleteApp()
+            throw PlayCoverError.appMaliciousProhibited
         }
     }
 }
