@@ -96,6 +96,13 @@ class PlayApp: BaseApp {
             // Wait for keychain unlock to finish before continuing
             await unlockKeyCover()
 
+            // Apps load PlayTools from ~/Library/Frameworks at process start.
+            // Refresh it synchronously here so a game cannot race the background
+            // startup installation and keep using the previous PlayCover build.
+            if hasPlayTools() {
+                try PlayTools.installOnSystemSync()
+            }
+
             if try !PlayTools.isInstalled() {
                 Log.shared.error("PlayTools are not installed! Please move PlayCover.app into Applications!")
             } else if try !Macho.isMachoValidArch(executable) {
