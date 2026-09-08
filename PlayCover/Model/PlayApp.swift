@@ -61,7 +61,9 @@ class PlayApp: BaseApp {
     lazy var container = AppContainer(bundleId: info.bundleIdentifier)
 
     // MARK: - Launch
+    @MainActor
     func launch() async {
+        guard !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
 
