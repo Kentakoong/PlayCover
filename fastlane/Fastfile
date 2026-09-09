@@ -29,7 +29,7 @@ lane :release do
   setup_ci if ENV['CI']
   match(type: "developer_id", readonly: true)
   Dir.chdir("..") do
-    sh("carthage", "update", "--use-xcframeworks")
+    sh("/bin/bash", "scripts/build-playtools.sh")
   end
   build_mac_app(
     configuration: "Release",
@@ -47,9 +47,8 @@ lane :nightly do
   setup_ci if ENV['CI']
   match(type: "developer_id", readonly: true)
   Dir.chdir("..") do
-    sh("carthage", "update", "--use-xcframeworks")
+    sh("/bin/bash", "scripts/build-playtools.sh")
   end
-  carthage(use_xcframeworks: true)
   build_mac_app(
     configuration: "Nightly",
     scheme: "PlayCover",

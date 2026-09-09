@@ -1,15 +1,14 @@
 #!/bin/bash
-# Build and archive the sibling PlayTools working copy, then verify provenance.
+# Build and archive the pinned GitHub PlayTools commit, then verify embedded binaries.
 set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-archive_path="${1:?Usage: archive-local-playtools.sh /absolute/output.xcarchive [xcodebuild settings...]}"
+archive_path="${1:?Usage: archive-playtools.sh /absolute/output.xcarchive [xcodebuild settings...]}"
 shift
-playtools_root="${PLAYTOOLS_SOURCE_DIR:-$(cd "$repo_root/../PlayTools" && pwd)}"
-/bin/bash "$repo_root/scripts/build-local-playtools.sh" "$playtools_root"
-framework="$repo_root/Carthage/Build/LocalPlayTools/PlayTools.framework"
+/bin/bash "$repo_root/scripts/build-playtools.sh"
+framework="$repo_root/Carthage/Build/RepositoryPlayTools/PlayTools.framework"
 FASTLANE=1 xcodebuild -project "$repo_root/PlayCover.xcodeproj" -scheme PlayCover \
     -configuration Nightly -destination 'generic/platform=macOS' \
-    -archivePath "$archive_path" "PLAYTOOLS_FRAMEWORK_PATH=$framework" "$@" archive
+    -archivePath "$archive_path" "$@" archive
 embedded="$archive_path/Products/Applications/PlayCover.app/Contents/Frameworks/PlayTools.framework"
 for executable in PlayTools PlugIns/AKInterface.bundle/Contents/MacOS/AKInterface; do
     built_uuid="$(xcrun dwarfdump --uuid "$framework/$executable" | awk '{print $2, $3}')"
