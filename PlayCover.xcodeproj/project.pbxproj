@@ -595,7 +595,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "set -euo pipefail\n\n# Local working copies are built natively for Catalyst by the bootstrap phase.\nif grep -q '^git \"file://' \"$SRCROOT/Cartfile\"; then\n    rm -rf \"$SCRIPT_OUTPUT_FILE_0\"\n    ditto \"$SRCROOT/Carthage/Build/LocalPlayTools/PlayTools.framework\" \"$SCRIPT_OUTPUT_FILE_0\"\n    exit 0\nfi\nexport SCRIPT_INPUT_FILE_0=\"$SRCROOT/Carthage/Build/PlayTools.xcframework/ios-arm64/PlayTools.framework\"\n\nif [ -x /usr/local/bin/carthage ]; then\n    carthage=/usr/local/bin/carthage\nelif [ -x /opt/homebrew/bin/carthage ]; then\n    carthage=/opt/homebrew/bin/carthage\nelif [ -x /opt/local/bin/carthage ]; then\n    carthage=/opt/local/bin/carthage\nelse\n    echo \"Cannot find carthage\"\n    exit 1\nfi\n\necho \"Copying PlayTools\"\n$carthage copy-frameworks\n\necho \"Handling AKInterface files\"\nmkdir -p \"${SCRIPT_OUTPUT_FILE_0}/PlugIns\"\nrm -rf   \"${SCRIPT_OUTPUT_FILE_0}/PlugIns/AKInterface.bundle\"\ncp -R    \"${SCRIPT_INPUT_FILE_0}/PlugIns/AKInterface.bundle\" \"${SCRIPT_OUTPUT_FILE_0}/PlugIns/AKInterface.bundle\"\n\necho \"Converting to maccatalyst\"\nvtool \\\n  -set-build-version maccatalyst 11.0 14.0 \\\n  -replace -output \\\n  \"${SCRIPT_OUTPUT_FILE_0}/PlayTools\" \\\n  \"${SCRIPT_OUTPUT_FILE_0}/PlayTools\" || true\n\necho \"Converting component bundles to maccatalyst\"\nfor bundle in \"${SCRIPT_OUTPUT_FILE_0}\"/PlugIns/*.bundle; do\n  [ -d \"$bundle\" ] || continue\n  name=\"$(basename \"$bundle\" .bundle)\"\n  if [ \"$name\" = \"AKInterface\" ]; then\n    continue\n  fi\n  exe=\"$bundle/$name\"\n  if [ -f \"$exe\" ]; then\n    vtool -set-build-version maccatalyst 11.0 14.0 -replace -output \"$exe\" \"$exe\" || true\n  fi\ndone\n\necho \"Rebundling shadow framework to deep framework structure\"\nFRAME=\"${SCRIPT_OUTPUT_FILE_0}\"\nNAME=\"PlayTools\"\n\nif [ -d \"$FRAME\" ] && [ ! -d \"$FRAME/Versions\" ]; then\n  echo \"Rebundling $NAME as macOS deep framework…\"\n\n  PARENT=\"$(dirname \"$FRAME\")\"\n  BASENAME=\"$(basename \"$FRAME\")\"\n  TMP=\"$PARENT/.${BASENAME}.rebundle\"\n\n  rm -rf \"$TMP\"\n  mkdir -p \"$TMP/Versions/A/Resources\" \"$TMP/Versions/A/Modules\" \"$TMP/Versions/A/PlugIns\"\n\n  echo \"moving shallow content to tmp A\"\n  [ -f \"$FRAME/$NAME\" ]      && cp -p \"$FRAME/$NAME\"      \"$TMP/Versions/A/$NAME\"\n  [ -d \"$FRAME/Headers\" ]    && cp -Rp \"$FRAME/Headers\"   \"$TMP/Versions/A/Headers\"\n  [ -d \"$FRAME/Modules\" ]    && cp -Rp \"$FRAME/Modules\"   \"$TMP/Versions/A/Modules\"\n  [ -f \"$FRAME/Info.plist\" ] && cp -p \"$FRAME/Info.plist\" \"$TMP/Versions/A/Resources/Info.plist\"\n\n  if [ -d \"$FRAME/Resources\" ]; then\n    ditto \"$FRAME/Resources\" \"$TMP/Versions/A/Resources\"\n  fi\n\n  for lproj in \"$FRAME\"/*.lproj; do\n    cp -Rp \"$lproj\" \"$TMP/Versions/A/Resources\"\n  done\n\n  if [ -d \"$FRAME/PlugIns\" ]; then\n    ditto \"$FRAME/PlugIns\" \"$TMP/Versions/A/PlugIns\"\n  fi\n\n  echo \"symlinking playtools\"\n  ln -s A \"$TMP/Versions/Current\"\n  ln -s Versions/Current/Resources \"$TMP/Resources\"\n  [ -d \"$TMP/Versions/A/Headers\" ] && ln -s Versions/Current/Headers \"$TMP/Headers\"\n  [ -d \"$TMP/Versions/A/Modules\" ] && ln -s Versions/Current/Modules \"$TMP/Modules\"\n  ln -s Versions/Current/$NAME \"$TMP/$NAME\"\n  [ -d \"$TMP/Versions/A/PlugIns\" ] && ln -s Versions/Current/PlugIns \"$TMP/PlugIns\"\n\n  rm -rf \"$FRAME\"\n  mv \"$TMP\" \"$FRAME\"\n\n  echo \"Rebundle done.\"\nfi\n";
+			shellScript = "set -euo pipefail\n\n# Explicit local builds must embed the framework just built, even when Cartfile points to GitHub.\nif [ -n \"${PLAYTOOLS_FRAMEWORK_PATH:-}\" ]; then\n    test -d \"$PLAYTOOLS_FRAMEWORK_PATH\"\n    rm -rf \"$SCRIPT_OUTPUT_FILE_0\"\n    ditto \"$PLAYTOOLS_FRAMEWORK_PATH\" \"$SCRIPT_OUTPUT_FILE_0\"\n    exit 0\nfi\n\n# Local working copies are built natively for Catalyst by the bootstrap phase.\nif grep -q '^git \"file://' \"$SRCROOT/Cartfile\"; then\n    rm -rf \"$SCRIPT_OUTPUT_FILE_0\"\n    ditto \"$SRCROOT/Carthage/Build/LocalPlayTools/PlayTools.framework\" \"$SCRIPT_OUTPUT_FILE_0\"\n    exit 0\nfi\nexport SCRIPT_INPUT_FILE_0=\"$SRCROOT/Carthage/Build/PlayTools.xcframework/ios-arm64/PlayTools.framework\"\n\nif [ -x /usr/local/bin/carthage ]; then\n    carthage=/usr/local/bin/carthage\nelif [ -x /opt/homebrew/bin/carthage ]; then\n    carthage=/opt/homebrew/bin/carthage\nelif [ -x /opt/local/bin/carthage ]; then\n    carthage=/opt/local/bin/carthage\nelse\n    echo \"Cannot find carthage\"\n    exit 1\nfi\n\necho \"Copying PlayTools\"\n$carthage copy-frameworks\n\necho \"Handling AKInterface files\"\nmkdir -p \"${SCRIPT_OUTPUT_FILE_0}/PlugIns\"\nrm -rf   \"${SCRIPT_OUTPUT_FILE_0}/PlugIns/AKInterface.bundle\"\ncp -R    \"${SCRIPT_INPUT_FILE_0}/PlugIns/AKInterface.bundle\" \"${SCRIPT_OUTPUT_FILE_0}/PlugIns/AKInterface.bundle\"\n\necho \"Converting to maccatalyst\"\nvtool \\\n  -set-build-version maccatalyst 11.0 14.0 \\\n  -replace -output \\\n  \"${SCRIPT_OUTPUT_FILE_0}/PlayTools\" \\\n  \"${SCRIPT_OUTPUT_FILE_0}/PlayTools\" || true\n\necho \"Converting component bundles to maccatalyst\"\nfor bundle in \"${SCRIPT_OUTPUT_FILE_0}\"/PlugIns/*.bundle; do\n  [ -d \"$bundle\" ] || continue\n  name=\"$(basename \"$bundle\" .bundle)\"\n  if [ \"$name\" = \"AKInterface\" ]; then\n    continue\n  fi\n  exe=\"$bundle/$name\"\n  if [ -f \"$exe\" ]; then\n    vtool -set-build-version maccatalyst 11.0 14.0 -replace -output \"$exe\" \"$exe\" || true\n  fi\ndone\n\necho \"Rebundling shadow framework to deep framework structure\"\nFRAME=\"${SCRIPT_OUTPUT_FILE_0}\"\nNAME=\"PlayTools\"\n\nif [ -d \"$FRAME\" ] && [ ! -d \"$FRAME/Versions\" ]; then\n  echo \"Rebundling $NAME as macOS deep framework…\"\n\n  PARENT=\"$(dirname \"$FRAME\")\"\n  BASENAME=\"$(basename \"$FRAME\")\"\n  TMP=\"$PARENT/.${BASENAME}.rebundle\"\n\n  rm -rf \"$TMP\"\n  mkdir -p \"$TMP/Versions/A/Resources\" \"$TMP/Versions/A/Modules\" \"$TMP/Versions/A/PlugIns\"\n\n  echo \"moving shallow content to tmp A\"\n  [ -f \"$FRAME/$NAME\" ]      && cp -p \"$FRAME/$NAME\"      \"$TMP/Versions/A/$NAME\"\n  [ -d \"$FRAME/Headers\" ]    && cp -Rp \"$FRAME/Headers\"   \"$TMP/Versions/A/Headers\"\n  [ -d \"$FRAME/Modules\" ]    && cp -Rp \"$FRAME/Modules\"   \"$TMP/Versions/A/Modules\"\n  [ -f \"$FRAME/Info.plist\" ] && cp -p \"$FRAME/Info.plist\" \"$TMP/Versions/A/Resources/Info.plist\"\n\n  if [ -d \"$FRAME/Resources\" ]; then\n    ditto \"$FRAME/Resources\" \"$TMP/Versions/A/Resources\"\n  fi\n\n  for lproj in \"$FRAME\"/*.lproj; do\n    cp -Rp \"$lproj\" \"$TMP/Versions/A/Resources\"\n  done\n\n  if [ -d \"$FRAME/PlugIns\" ]; then\n    ditto \"$FRAME/PlugIns\" \"$TMP/Versions/A/PlugIns\"\n  fi\n\n  echo \"symlinking playtools\"\n  ln -s A \"$TMP/Versions/Current\"\n  ln -s Versions/Current/Resources \"$TMP/Resources\"\n  [ -d \"$TMP/Versions/A/Headers\" ] && ln -s Versions/Current/Headers \"$TMP/Headers\"\n  [ -d \"$TMP/Versions/A/Modules\" ] && ln -s Versions/Current/Modules \"$TMP/Modules\"\n  ln -s Versions/Current/$NAME \"$TMP/$NAME\"\n  [ -d \"$TMP/Versions/A/PlugIns\" ] && ln -s Versions/Current/PlugIns \"$TMP/PlugIns\"\n\n  rm -rf \"$FRAME\"\n  mv \"$TMP\" \"$FRAME\"\n\n  echo \"Rebundle done.\"\nfi\n";
 		};
 		AAC28F222899A05B005057FB /* Codesign sparkle */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -814,13 +814,14 @@
 		8783D00926B8C52E00171041 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon${BUNDLE_ID_SUFFIX}";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				BUNDLE_ID_SUFFIX = "";
 				CODE_SIGN_ENTITLEMENTS = PlayCover/PlayCoverRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 856;
@@ -828,6 +829,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "PlayCover/Preview\\ Content";
 				DEVELOPMENT_TEAM = 792V9HMJW3;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = SX5J72PCDG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				EXCLUDED_ARCHS = x86_64;
@@ -844,6 +846,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.playcover.PlayCover;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "match Direct io.playcover.PlayCover macos";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				RUN_DOCUMENTATION_COMPILER = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = off;
 				SWIFT_OBJC_BRIDGING_HEADER = "./PlayCover/PlayCover-Bridging-Header.h";
@@ -917,13 +920,14 @@
 		9BFBDA6828C95BA500252EB7 /* Nightly */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon${BUNDLE_ID_SUFFIX}";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				BUNDLE_ID_SUFFIX = .dev;
 				CODE_SIGN_ENTITLEMENTS = PlayCover/PlayCoverRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 856;
@@ -931,6 +935,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "PlayCover/Preview\\ Content";
 				DEVELOPMENT_TEAM = 792V9HMJW3;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = SX5J72PCDG;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				EXCLUDED_ARCHS = x86_64;
@@ -947,6 +952,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.playcover.PlayCover;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "match Direct io.playcover.PlayCover macos";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				RUN_DOCUMENTATION_COMPILER = NO;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = off;
 				SWIFT_OBJC_BRIDGING_HEADER = "./PlayCover/PlayCover-Bridging-Header.h";
