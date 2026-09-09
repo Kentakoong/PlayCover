@@ -33,6 +33,8 @@ DerivedData/
 *.hmap
 
 ## App packaging
+*.app
+*.xcarchive
 *.ipa
 *.dSYM.zip
 *.dSYM
